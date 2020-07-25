@@ -1,9 +1,36 @@
 import React, { useState, useEffect } from 'react'
+import { Tezos } from '@taquito/taquito'
+import BigNumber from 'bignumber.js'
 import './Voting.css'
 
-async function importKey(key: string, passphrase ?: string) { }
-async function getStorage() { }
-async function getContract() { }
+type Storage = {
+  candidates: {
+    [name: string]: BigNumber
+  };
+  owner: string;
+  voters: {
+    [pkh: string]: boolean
+  };
+  voting_ended: boolean;
+}
+// const RPC_ADDR = 'http://127.0.0.1:8732'
+const RPC_ADDR = 'http://192.168.0.171:8732'
+const CONTRACT_ADDR = "KT1L6hJeetJVbxzMxtH2CjK7onB34H2tCG6z"
+Tezos.setProvider({ rpc: RPC_ADDR })
+
+async function importKey(key: string, passphrase ?: string) {
+  return Tezos.importKey(key, passphrase)
+}
+
+async function getStorage() {
+  const contract = await getContract()
+  const storage = await contract.storage()
+  return storage as Storage
+}
+
+async function getContract() {
+  return await Tezos.contract.at(CONTRACT_ADDR)
+}
 
 const Voting = () => {
   const [key, setKey] = useState({
@@ -15,7 +42,6 @@ const Voting = () => {
   const [inTransaction, setInTransaction] = useState(false)
   const [storage, setStorage] = useState<Storage>()
   const [newCandidateName, setNewCandidateName] = useState('')
-  const isDisabled = !key.isKeyImported || inTransaction
 
   const updateStorage = async () => {
     const storage = await getStorage()
@@ -27,14 +53,50 @@ const Voting = () => {
     return () => clearInterval(interval)
   }, [])
 
-  async function injection(opName: string, name?: string) { }
+
+  async function injection(opName: string, name?: string) {
+    try {
+      setInTransaction(true)
+      const contract = await getContract()
+      var response
+      if (opName === "vote") {
+        response = await contract.methods.vote(name).send()
+      } else if (opName === "remove") {
+        response = await contract.methods.remove_candidate(name).send()
+      } else if (opName === "add") {
+        response = await contract.methods.add_candidate(name).send()
+        setNewCandidateName('')
+      } else { // close
+        response = await contract.methods.close_election().send()
+      } 
+      const level = await response.confirmation()
+      alert(`Operation '${opName}' is included at block ${level}`)
+      setInTransaction(false)
+    } catch (e) {
+      alert(e.message)
+      setInTransaction(false)
+    }
+  }
+
+  // functions
   const onVote = (name: string) => injection("vote", name)
   const onRemoveCandidate = (name: string) => injection("remove", name)
   const onAddCandidate = (name: string) => injection("add", name)
   const onCloseElection = () => injection("close")
 
+
+  const candidates = storage
+    ? Object.keys(storage.candidates).map(name => ({
+      name,
+      votes: storage.candidates[name].toNumber()
+    }))
+    : []
+
+  const isDisabled = !key.isKeyImported || inTransaction
+
   return (
     <div className="app">
+      {/* key import section */}
       <header>
         <h2>Key</h2>
         <label>
@@ -69,6 +131,7 @@ const Voting = () => {
           Import Keys
         </button>
       </header>
+
       <main className="vote">
         <h2>
           {
@@ -126,6 +189,7 @@ const Voting = () => {
           </table>
         </div>
       </main>
+
       <footer>
         <div>
           <h4>Add Candidate</h4>
@@ -162,5 +226,6 @@ const Voting = () => {
     </div>
   );
 }
+
 
 export default Voting
