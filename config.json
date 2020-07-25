@@ -1,0 +1,1 @@
+{ "rpc": { "cors-origin": ["*"], "cors-headers": ["*"] }, "p2p": { "listen-addr": "[::]:9732" } }

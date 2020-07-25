@@ -1,0 +1,46 @@
+.app {
+  margin: 32px;
+}
+
+label {
+  display: block;
+  margin-bottom: 12px;
+}
+
+label > span {
+  display: block;
+}
+
+label > input {
+  padding: 4px;
+}
+
+/* /////////////////////// */
+.vote {
+  margin-top: 16px;
+}
+
+.vote > .candidates {
+  display: flex;
+  flex-wrap: wrap;
+  width: 640px;
+}
+
+.vote>.candidates table {
+  border-collapse: collapse;
+  border: 1px solid #cccccc;
+}
+
+.vote > .candidates td,  
+.vote > .candidates th  {
+  text-align: center;
+  border: 1px solid #cccccc;
+  margin-right: 15px;
+}
+
+.vote>.votee button {
+  width: 100%;
+
+}
+
+/* (storage.voters.hasOwnProperty(key.pkh) ? "") */
